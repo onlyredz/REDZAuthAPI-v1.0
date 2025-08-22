@@ -10,9 +10,9 @@ namespace REDZAuthApi.Controllers
     {
         private readonly AuthService _authService;
 
-        public AdminController(IMongoDatabase database)
+        public AdminController(AuthService authService)
         {
-            _authService = new AuthService(database);
+            _authService = authService;
         }
 
         [HttpPost("reset-hwid")]

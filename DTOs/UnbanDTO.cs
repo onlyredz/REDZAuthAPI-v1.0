@@ -8,6 +8,6 @@
         public bool UnbanUser { get; set; }
         public bool UnbanIP { get; set; }
         public bool UnbanHWID { get; set; }
-        public string Reason { get; set; } = "Motivo não informado";
+        public string Reason { get; set; } = "Reason not provided";
     }
 }

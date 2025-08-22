@@ -11,26 +11,30 @@ namespace REDZAuthApi.Controllers
     public class UnbanController : ControllerBase
     {
         private readonly BlacklistService _blacklistService;
+        private readonly HttpClient _httpClient;
+        private readonly IConfiguration _configuration;
 
-        public UnbanController(IMongoDatabase database)
+        public UnbanController(BlacklistService blacklistService, HttpClient httpClient, IConfiguration configuration)
         {
-            _blacklistService = new BlacklistService(database);
+            _blacklistService = blacklistService;
+            _httpClient = httpClient;
+            _configuration = configuration;
         }
 
         [HttpPost]
         public async Task<IActionResult> Unban([FromBody] UnbanDTO request)
         {
             if (!request.UnbanUser && !request.UnbanIP && !request.UnbanHWID)
-                return BadRequest("Selecione pelo menos uma opção para desbanir.");
+                return BadRequest("Select at least one option to unban.");
 
             if (request.UnbanUser && string.IsNullOrEmpty(request.Username))
-                return BadRequest("Informe o username para desbanir.");
+                return BadRequest("Username is required to unban user.");
 
             if (request.UnbanIP && string.IsNullOrEmpty(request.IP))
-                return BadRequest("Informe o IP para desbanir.");
+                return BadRequest("IP is required to unban IP.");
 
             if (request.UnbanHWID && string.IsNullOrEmpty(request.HWID))
-                return BadRequest("Informe o HWID para desbanir.");
+                return BadRequest("HWID is required to unban HWID.");
 
             await _blacklistService.UnbanAsync(
                 request.UnbanUser ? request.Username : null,
@@ -40,38 +44,47 @@ namespace REDZAuthApi.Controllers
 
             await SendWebhookUnban(request);
 
-            return Ok("Desbanimento realizado com sucesso.");
+            return Ok("Unban completed successfully.");
         }
 
         private async Task SendWebhookUnban(UnbanDTO req)
         {
-            var embed = new
+            try
             {
-                embeds = new[]
+                var webhookUrl = _configuration["WebhookSettings:DiscordWebhookUrl"];
+                if (string.IsNullOrEmpty(webhookUrl) || webhookUrl == "YOUR_DISCORD_WEBHOOK_URL_HERE")
+                    return; // Skip webhook if not configured
+
+                var embed = new
                 {
-                    new
+                    embeds = new[]
                     {
-                        title = "✅ Desbanimento realizado",
-                        color = 0x00FF00,
-                        fields = new[]
+                        new
                         {
-                            new { name = "Usuário", value = req.Username ?? "N/A", inline = true },
-                            new { name = "IP", value = req.IP ?? "N/A", inline = true },
-                            new { name = "HWID", value = req.HWID ?? "N/A", inline = true },
-                            new { name = "Desbanir usuário?", value = req.UnbanUser.ToString(), inline = true },
-                            new { name = "Desbanir IP?", value = req.UnbanIP.ToString(), inline = true },
-                            new { name = "Desbanir HWID?", value = req.UnbanHWID.ToString(), inline = true },
-                            new { name = "Motivo", value = req.Reason ?? "Motivo não informado", inline = false },
-                            new { name = "Data", value = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"), inline = false }
+                            title = "✅ Unban Completed",
+                            color = 0x00FF00,
+                            fields = new[]
+                            {
+                                new { name = "User", value = req.Username ?? "N/A", inline = true },
+                                new { name = "IP", value = req.IP ?? "N/A", inline = true },
+                                new { name = "HWID", value = req.HWID ?? "N/A", inline = true },
+                                new { name = "Unban User?", value = req.UnbanUser.ToString(), inline = true },
+                                new { name = "Unban IP?", value = req.UnbanIP.ToString(), inline = true },
+                                new { name = "Unban HWID?", value = req.UnbanHWID.ToString(), inline = true },
+                                new { name = "Reason", value = req.Reason ?? "Reason not provided", inline = false },
+                                new { name = "Date", value = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"), inline = false }
+                            }
                         }
                     }
-                }
-            };
+                };
 
-            using var http = new HttpClient();
-            var json = new StringContent(JsonSerializer.Serialize(embed), System.Text.Encoding.UTF8, "application/json");
-
-            await http.PostAsync("https://discord.com/api/webhooks/1322751086775500872/eHM8IgEIyLFxBqgurJNlXyaGzHi4rNjWr16XtmjWsAra7yI12u5vQcNuzlMLM6nQ0aH7", json);
+                var json = new StringContent(JsonSerializer.Serialize(embed), System.Text.Encoding.UTF8, "application/json");
+                await _httpClient.PostAsync(webhookUrl, json);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Webhook error: {ex.Message}");
+            }
         }
     }
 }

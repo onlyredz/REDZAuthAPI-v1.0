@@ -24,7 +24,7 @@ namespace REDZAuthApi.Controllers
 
             var html = $@"
 <!DOCTYPE html>
-<html lang='pt-BR'>
+<html lang='en'>
 <head>
     <meta charset='UTF-8'>
     <title>Status - REDZAuth API</title>
@@ -147,30 +147,30 @@ namespace REDZAuthApi.Controllers
             <div class='status-dot {GetStatusClass("online")}'></div>
             REDZAuth API
         </h1>
-        <p>Status geral: <strong>API ONLINE</strong></p>
+        <p>Overall Status: <strong>API ONLINE</strong></p>
 
         <ul>
             <li>
-                Autenticação
+                Authentication
                 <span class='tag tag-{authStatus}'>
                     {authStatus.ToUpper()}
                 </span>
             </li>
             <li>
-                 Keys
+                License Keys
                 <span class='tag tag-{licenseStatus}'>
                     {licenseStatus.ToUpper()}
                 </span>
             </li>
             <li>
-                Banco de Dados
+                Database
                 <span class='tag tag-{dbStatus}'>
                     {dbStatus.ToUpper()}
                 </span>
             </li>
         </ul>
 
-        <footer>© 2024 - {DateTime.Now.Year} REDZ API Auth | Todos os direitos reservados.</footer>
+        <footer>© 2024 - {DateTime.Now.Year} REDZAuth API | All rights reserved.</footer>
     </div>
 </body>
 </html>";

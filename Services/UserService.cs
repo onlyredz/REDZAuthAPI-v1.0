@@ -15,12 +15,28 @@ namespace REDZAuthApi.Services
 
         public async Task<User?> GetByUsernameAsync(string username)
         {
-            return await _users.Find(u => u.Username == username).FirstOrDefaultAsync();
+            try
+            {
+                return await _users.Find(u => u.Username == username).FirstOrDefaultAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error getting user by username: {ex.Message}");
+                return null;
+            }
         }
 
         public async Task UpdateUserAsync(User user)
         {
-            await _users.ReplaceOneAsync(u => u.Id == user.Id, user);
+            try
+            {
+                await _users.ReplaceOneAsync(u => u.Id == user.Id, user);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error updating user: {ex.Message}");
+                throw;
+            }
         }
     }
 }

@@ -1,6 +1,170 @@
-@REDZAuthApi_HostAddress = http://localhost:5171
+@REDZAuthApi_HostAddress = https://localhost:7001
 
-GET {{REDZAuthApi_HostAddress}}/weatherforecast/
-Accept: application/json
+### Authentication Endpoints
+
+# Register a new user
+POST {{REDZAuthApi_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "password": "password123",
+  "key": "MENSAL-ABCD-1234",
+  "hwid": "device-hwid-here",
+  "ip": "192.168.1.1"
+}
+
+###
+
+# Login user
+POST {{REDZAuthApi_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "password": "password123",
+  "hwid": "device-hwid-here",
+  "ip": "192.168.1.1"
+}
+
+###
+
+### License Management Endpoints
+
+# Generate a new license key
+POST {{REDZAuthApi_HostAddress}}/api/license/generate?plan=mensal
+
+###
+
+# Create a custom license key
+POST {{REDZAuthApi_HostAddress}}/api/license/custom?customKey=CUSTOM-KEY-123&plan=mensal
+
+###
+
+# Generate license key (alternative endpoint)
+POST {{REDZAuthApi_HostAddress}}/api/key/generate?plan=anual
+
+###
+
+# Create custom license key (alternative endpoint)
+POST {{REDZAuthApi_HostAddress}}/api/key/custom?plan=lifetime&customKey=LIFETIME-KEY-456
+
+###
+
+# List all license keys
+GET {{REDZAuthApi_HostAddress}}/api/key/list
+
+###
+
+# List unused monthly keys
+GET {{REDZAuthApi_HostAddress}}/api/key/list?plan=mensal&used=false
+
+###
+
+# List keys created in date range
+GET {{REDZAuthApi_HostAddress}}/api/key/list?fromDate=2024-01-01&toDate=2024-12-31
+
+###
+
+### Admin Endpoints
+
+# Reset HWID for a user
+POST {{REDZAuthApi_HostAddress}}/api/admin/reset-hwid?username=testuser
+
+###
+
+# Reset HWID (alternative endpoint)
+POST {{REDZAuthApi_HostAddress}}/api/hwid/reset
+Content-Type: application/json
+
+{
+  "username": "testuser"
+}
+
+###
+
+### Blacklist Management
+
+# Ban a user
+POST {{REDZAuthApi_HostAddress}}/api/ban
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "banUser": true,
+  "banIP": false,
+  "banHWID": false,
+  "reason": "Violation of terms of service"
+}
+
+###
+
+# Ban an IP address
+POST {{REDZAuthApi_HostAddress}}/api/ban
+Content-Type: application/json
+
+{
+  "ip": "192.168.1.100",
+  "banUser": false,
+  "banIP": true,
+  "banHWID": false,
+  "reason": "Suspicious activity detected"
+}
+
+###
+
+# Ban a HWID
+POST {{REDZAuthApi_HostAddress}}/api/ban
+Content-Type: application/json
+
+{
+  "hwid": "suspicious-hwid-here",
+  "banUser": false,
+  "banIP": false,
+  "banHWID": true,
+  "reason": "Multiple account violations"
+}
+
+###
+
+# Unban a user
+POST {{REDZAuthApi_HostAddress}}/api/unban
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "unbanUser": true,
+  "unbanIP": false,
+  "unbanHWID": false,
+  "reason": "Appeal approved"
+}
+
+###
+
+# Unban an IP address
+POST {{REDZAuthApi_HostAddress}}/api/unban
+Content-Type: application/json
+
+{
+  "ip": "192.168.1.100",
+  "unbanUser": false,
+  "unbanIP": true,
+  "unbanHWID": false,
+  "reason": "False positive - IP cleared"
+}
+
+###
+
+### Status Page
+
+# Check API status
+GET {{REDZAuthApi_HostAddress}}/apistatus
+
+###
+
+### Swagger Documentation
+
+# Access API documentation
+GET {{REDZAuthApi_HostAddress}}/swagger
 
 ###

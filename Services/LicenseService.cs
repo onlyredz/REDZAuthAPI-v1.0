@@ -41,67 +41,115 @@ namespace REDZAuthApi.Services
 
         public async Task<License> CreateLicenseAsync(string plan)
         {
-            var key = GenerateAutoKey(plan);
-            var expiration = DateTime.UtcNow.AddDays(GetDaysForPlan(plan));
-
-            var license = new License
+            try
             {
-                Key = key,
-                Plan = plan,
-                Expiration = expiration
-            };
+                var key = GenerateAutoKey(plan);
+                var expiration = DateTime.UtcNow.AddDays(GetDaysForPlan(plan));
 
-            await _licenseCollection.InsertOneAsync(license);
-            return license;
+                var license = new License
+                {
+                    Key = key,
+                    Plan = plan,
+                    Expiration = expiration
+                };
+
+                await _licenseCollection.InsertOneAsync(license);
+                return license;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error creating license: {ex.Message}");
+                throw;
+            }
         }
 
         public async Task<(bool Success, string? Error)> CreateCustomLicenseAsync(string customKey, string plan)
         {
-            var exists = await _licenseCollection.Find(l => l.Key == customKey).FirstOrDefaultAsync();
-            if (exists != null)
-                return (false, "Key already exists");
-
-            var expiration = DateTime.UtcNow.AddDays(GetDaysForPlan(plan));
-
-            var license = new License
+            try
             {
-                Key = customKey,
-                Plan = plan,
-                Expiration = expiration
-            };
+                var exists = await _licenseCollection.Find(l => l.Key == customKey).FirstOrDefaultAsync();
+                if (exists != null)
+                    return (false, "Key already exists");
 
-            await _licenseCollection.InsertOneAsync(license);
-            return (true, null);
+                var expiration = DateTime.UtcNow.AddDays(GetDaysForPlan(plan));
+
+                var license = new License
+                {
+                    Key = customKey,
+                    Plan = plan,
+                    Expiration = expiration
+                };
+
+                await _licenseCollection.InsertOneAsync(license);
+                return (true, null);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error creating custom license: {ex.Message}");
+                return (false, "Failed to create license");
+            }
         }
 
         public async Task<License?> GetLicenseByKeyAsync(string key)
         {
-            return await _licenseCollection.Find(l => l.Key == key).FirstOrDefaultAsync();
+            try
+            {
+                return await _licenseCollection.Find(l => l.Key == key).FirstOrDefaultAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error getting license by key: {ex.Message}");
+                return null;
+            }
         }
 
         public async Task<bool> KeyExistsAsync(string key)
         {
-            return await _licenseCollection.Find(l => l.Key == key).AnyAsync();
+            try
+            {
+                return await _licenseCollection.Find(l => l.Key == key).AnyAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error checking if key exists: {ex.Message}");
+                return false;
+            }
         }
 
         public async Task<List<License>> GetFilteredKeysAsync(FilterDefinition<License> filter)
         {
-            return await _licenseCollection.Find(filter).ToListAsync();
+            try
+            {
+                return await _licenseCollection.Find(filter).ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error getting filtered keys: {ex.Message}");
+                return new List<License>();
+            }
         }
 
         public async Task<bool> MarkLicenseAsUsedAsync(string key, string username, string ip, string hwid)
         {
-            var update = Builders<License>.Update
-                .Set(l => l.UsedBy, username)
-                .Set(l => l.UsedIP, ip)
-                .Set(l => l.UsedHWID, hwid);
+            try
+            {
+                var update = Builders<License>.Update
+                    .Set(l => l.UsedBy, username)
+                    .Set(l => l.UsedIP, ip)
+                    .Set(l => l.UsedHWID, hwid);
 
-            var result = await _licenseCollection.UpdateOneAsync(
-                l => l.Key == key && l.UsedBy == null,
-                update
-            );
+                var result = await _licenseCollection.UpdateOneAsync(
+                    l => l.Key == key && l.UsedBy == null,
+                    update
+                );
 
-            return result.ModifiedCount > 0;
+                return result.ModifiedCount > 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error marking license as used: {ex.Message}");
+                return false;
+            }
         }
     }
 }

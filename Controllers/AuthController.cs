@@ -12,9 +12,9 @@ namespace REDZAuthApi.Controllers
     {
         private readonly AuthService _authService;
 
-        public AuthController(IMongoDatabase database)
+        public AuthController(AuthService authService)
         {
-            _authService = new AuthService(database);
+            _authService = authService;
         }
 
         [HttpPost("register")]

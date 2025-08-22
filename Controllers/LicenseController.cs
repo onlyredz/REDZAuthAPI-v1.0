@@ -10,9 +10,9 @@ namespace REDZAuthApi.Controllers
     {
         private readonly LicenseService _licenseService;
 
-        public LicenseController(IMongoDatabase database)
+        public LicenseController(LicenseService licenseService)
         {
-            _licenseService = new LicenseService(database);
+            _licenseService = licenseService;
         }
 
         [HttpPost("generate")]

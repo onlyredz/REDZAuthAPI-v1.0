@@ -13,13 +13,16 @@ namespace REDZAuthApi.Services
         private readonly IMongoCollection<User> _users;
         private readonly IMongoCollection<License> _licenses;
         private readonly BlacklistService _blacklistService;
-        private readonly HttpClient _httpClient = new();
+        private readonly HttpClient _httpClient;
+        private readonly IConfiguration _configuration;
 
-        public AuthService(IMongoDatabase database)
+        public AuthService(IMongoDatabase database, BlacklistService blacklistService, HttpClient httpClient, IConfiguration configuration)
         {
             _users = database.GetCollection<User>("Users");
             _licenses = database.GetCollection<License>("Licenses");
-            _blacklistService = new BlacklistService(database);
+            _blacklistService = blacklistService;
+            _httpClient = httpClient;
+            _configuration = configuration;
         }
 
         public async Task<(User?, string?)> RegisterAsync(RegisterDTO dto, HttpContext context)
@@ -113,7 +116,6 @@ namespace REDZAuthApi.Services
             return (true, "HWID Reset Successfully");
         }
 
-
         private string HashPassword(string password)
         {
             using var sha = SHA256.Create();
@@ -122,10 +124,22 @@ namespace REDZAuthApi.Services
             return Convert.ToBase64String(hash);
         }
 
-        private async Task EnviarParaWebhook(object payload)
+        private async Task SendWebhookAsync(object payload)
         {
-            var json = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
-            await _httpClient.PostAsync("https://discord.com/api/webhooks/1322751086775500872/eHM8IgEIyLFxBqgurJNlXyaGzHi4rNjWr16XtmjWsAra7yI12u5vQcNuzlMLM6nQ0aH7", json);
+            try
+            {
+                var webhookUrl = _configuration["WebhookSettings:DiscordWebhookUrl"];
+                if (string.IsNullOrEmpty(webhookUrl) || webhookUrl == "YOUR_DISCORD_WEBHOOK_URL_HERE")
+                    return; // Skip webhook if not configured
+
+                var json = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+                await _httpClient.PostAsync(webhookUrl, json);
+            }
+            catch (Exception ex)
+            {
+                // Log webhook error but don't fail the main operation
+                Console.WriteLine($"Webhook error: {ex.Message}");
+            }
         }
 
         private async Task SendWebhookRegister(string username, string ip, string hwid, string plan, DateTime expiration)
@@ -151,7 +165,7 @@ namespace REDZAuthApi.Services
                     }
                 }
             };
-            await EnviarParaWebhook(embed);
+            await SendWebhookAsync(embed);
         }
 
         private async Task SendWebhookBanAttempt(string username, string ip, string hwid, string reason)
@@ -172,7 +186,7 @@ namespace REDZAuthApi.Services
                     }
                 }
             };
-            await EnviarParaWebhook(embed);
+            await SendWebhookAsync(embed);
         }
 
         private async Task SendWebhookExpiration(string username, string ip, string hwid, DateTime expiration)
@@ -197,7 +211,7 @@ namespace REDZAuthApi.Services
                     }
                 }
             };
-            await EnviarParaWebhook(embed);
+            await SendWebhookAsync(embed);
         }
 
         private async Task SendWebhookFirstTimeHWID(string username, string ip, string hwid)
@@ -217,7 +231,7 @@ namespace REDZAuthApi.Services
                     }
                 }
             };
-            await EnviarParaWebhook(embed);
+            await SendWebhookAsync(embed);
         }
 
         private async Task SendWebhookHWID(string username, string ip, string newHWID, string savedHWID)
@@ -238,7 +252,7 @@ namespace REDZAuthApi.Services
                     }
                 }
             };
-            await EnviarParaWebhook(embed);
+            await SendWebhookAsync(embed);
         }
     }
 }

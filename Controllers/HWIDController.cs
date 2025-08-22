@@ -10,16 +10,16 @@ namespace REDZAuthApi.Controllers
     {
         private readonly AuthService _authService;
 
-        public HWIDController(IMongoDatabase database)
+        public HWIDController(AuthService authService)
         {
-            _authService = new AuthService(database);
+            _authService = authService;
         }
 
         [HttpPost("reset")]
         public async Task<IActionResult> ResetHWID([FromBody] HWIDResetDTO dto)
         {
             if (string.IsNullOrEmpty(dto.Username))
-                return BadRequest("Username é obrigatório.");
+                return BadRequest("Username is required.");
 
             var (success, message) = await _authService.ResetHWIDAsync(dto.Username);
 
